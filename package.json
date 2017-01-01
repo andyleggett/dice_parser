@@ -1,0 +1,14 @@
+{
+  "name": "dice_parser",
+  "version": "1.0.0",
+  "description": "Functional parsing of dice syntax",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "ramda": "^0.23.0"
+  }
+}
