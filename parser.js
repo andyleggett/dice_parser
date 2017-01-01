@@ -89,6 +89,24 @@ const map = curry((f, parser) => {
     })
 })
 
+const zeroOrMore = (parser, input) => {
+    const result = parser.action(input)
+
+    if (isSuccess(result)){
+        const [subsequentValues, remaining] = zeroOrMore(parser, result.remaining)
+        const values = prepend(result.value, subsequentValues)
+        return [values, remaining]
+    } else {
+        return [[], input]
+    }
+}
+
+const many = (parser) => {
+    return Parser((input) => {
+        return Success(...zeroOrMore(parser, input))
+    })
+}
+
 //PARSERS
 const str = (str) => {
     return Parser((input) => {   
@@ -140,7 +158,7 @@ module.exports = {
     orElse,
     seq,
     andThen,
-    orElse,
     map,
+    many,
     parse
 }

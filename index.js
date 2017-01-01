@@ -8,6 +8,8 @@ const projectDie = (die) => ({
 
 const die = compose(map(projectDie), seq)([digits, str('d'), digits])
 
-const final = compose(andThen(die), andThen(whitespace), andThen(die))(whitespace)
+//const final = compose(andThen(die), andThen(whitespace), andThen(die))(whitespace)
 
-console.log(parse(final, '    12d4     18d10'))
+const final = many(andThen(die)(whitespace))
+
+console.log(compose(JSON.stringify, parse)(final, ' 12d4 18d10 7d100 83d14'))
