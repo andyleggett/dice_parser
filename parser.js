@@ -38,6 +38,8 @@ const isSuccess = (result) => result instanceof _Success
 
 const isFailure = (result) => result instanceof _Failure
 
+const first = (pair) => pair[0]
+
 //COMBINATORS
 const orElse = curry((parser1, parser2) => {
     return Parser((input) => {
@@ -94,7 +96,7 @@ const zeroOrMore = (parser, input) => {
 
     if (isSuccess(result)){
         const [subsequentValues, remaining] = zeroOrMore(parser, result.remaining)
-        const values = prepend(result.value, subsequentValues)
+        const values = result.value === undefined ? subsequentValues : prepend(result.value, subsequentValues)
         return [values, remaining]
     } else {
         return [[], input]
@@ -104,6 +106,18 @@ const zeroOrMore = (parser, input) => {
 const many = (parser) => {
     return Parser((input) => {
         return Success(...zeroOrMore(parser, input))
+    })
+}
+
+const skip = (parser) => {
+    return Parser((input) => {
+        const result = parser.action(input);
+
+        if (isSuccess(result)){
+            return Success(undefined, result.remaining)
+        } else {
+            return result
+        }
     })
 }
 
@@ -160,5 +174,6 @@ module.exports = {
     andThen,
     map,
     many,
+    skip,
     parse
 }
