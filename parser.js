@@ -140,10 +140,10 @@ const str = (str) => {
         const test = input.slice(0, str.length)
 
         if (test === str){
-            console.log('success - ' + str + ' - ' + input.substr(str.length))
+            //console.log('success - ' + str + ' - ' + input.substr(str.length))
             return Success(str, input.substr(str.length))
         } else {
-            console.log('failure - ' + str)
+            //console.log('failure - ' + str)
             return Failure('Expected \'' + str + '\'')
         }
     })
@@ -154,10 +154,10 @@ const regex = (regexp) => {
         const match = input.match(regexp)
 
         if (match !== null && (match[0] === input.substr(0, match[0].length))){
-            console.log('success - ' + regexp + ' - ' + input.substr(match[0].length))
+            //console.log('success - ' + regexp + ' - ' + input.substr(match[0].length))
             return Success(match[0], input.substr(match[0].length))
         } else {
-            console.log('failure - ' + regexp)
+            //console.log('failure - ' + regexp)
             return Failure('Expected a string to match ' + regexp)
         }
     })
