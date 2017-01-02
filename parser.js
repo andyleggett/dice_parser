@@ -75,7 +75,7 @@ const or = (parsers) => {
     return reduce(orElse, parsers[0])(tail(parsers))
 }
 
-const seq = (parsers) => {
+const sequence = (parsers) => {
     return reduce(andThen, parsers[0])(tail(parsers))
 }
 
@@ -91,12 +91,25 @@ const map = curry((f, parser) => {
     })
 })
 
+const fold = (parser) => {
+    return parser.value
+}
+
+const lazy = (f) => {
+    const parser = Parser((input) => {
+        parser.action = f().action
+        return parser.action(input)
+    })
+
+    return parser;
+}
+
 const zeroOrMore = (parser, input) => {
     const result = parser.action(input)
 
     if (isSuccess(result)){
         const [subsequentValues, remaining] = zeroOrMore(parser, result.remaining)
-        const values = result.value === undefined ? subsequentValues : prepend(result.value, subsequentValues)
+        const values = prepend(result.value, subsequentValues)
         return [values, remaining]
     } else {
         return [[], input]
@@ -110,8 +123,8 @@ const many = (parser) => {
 }
 
 const skip = (parser) => {
-    return Parser((input) => {
-        const result = parser.action(input);
+    return Parser((input) => {   
+        const result = parser.action(input)
 
         if (isSuccess(result)){
             return Success(undefined, result.remaining)
@@ -124,14 +137,13 @@ const skip = (parser) => {
 //PARSERS
 const str = (str) => {
     return Parser((input) => {   
-        console.log('parsing for ' + str)   
         const test = input.slice(0, str.length)
 
         if (test === str){
-            console.log('str success')
+            console.log('success - ' + str + ' - ' + input.substr(str.length))
             return Success(str, input.substr(str.length))
         } else {
-            console.log('str failure')
+            console.log('failure - ' + str)
             return Failure('Expected \'' + str + '\'')
         }
     })
@@ -139,16 +151,13 @@ const str = (str) => {
 
 const regex = (regexp) => {
     return Parser((input) => {
-        console.log('parsing for ' + regexp) 
         const match = input.match(regexp)
 
-        console.log(regexp, match)
-
         if (match !== null && (match[0] === input.substr(0, match[0].length))){
-            console.log('regex success')
+            console.log('success - ' + regexp + ' - ' + input.substr(match[0].length))
             return Success(match[0], input.substr(match[0].length))
         } else {
-            console.log('regex failure')
+            console.log('failure - ' + regexp)
             return Failure('Expected a string to match ' + regexp)
         }
     })
@@ -159,7 +168,6 @@ const digits = regex(/[0-9]+/)
 
 const whitespace = regex(/\s+/)
 
-
 const parse = (parser, input) => parser.action(input)
 
 module.exports = {  
@@ -168,12 +176,14 @@ module.exports = {
     whitespace,
     digit,
     digits,
-    or,
     orElse,
-    seq,
     andThen,
+    sequence,
+    or,
     map,
+    fold,
     many,
     skip,
+    lazy,
     parse
 }
