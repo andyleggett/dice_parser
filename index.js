@@ -1,45 +1,29 @@
 const {many, sequence, or, digits, str, whitespace, optWhitespace, parse, map, skip, fold, lazy} = require('./parser')
-const {compose, reject, isNil, prop, init, drop} = require('ramda')
+const {compose, reject, isNil, prop, init, drop, map: rMap, merge} = require('ramda')
 
 const filterExpression = (item) => (item === '(' || item === ')' || item === undefined)
 
 const projectDie = (die) => ({
-    parseType: 'die',
+    type: 'die',
     number: Number(die[0]),
-    type: Number(die[2])
+    diceType: Number(die[2])
 })
 
 const projectNumber = (num) => ({
-    parseType: 'number',
+    type: 'number',
     number: Number(num)
 })
 
 const projectOperator = (op) => ({
-    parseType: 'operator',
-    type: op
+    type: 'operator',
+    operation: op
 })
 
-const projectExpression = (exp) => {
+const projectBracketExpression = (exp) =>  ({
+    type: 'subexpression',
+    subexpression: reject(filterExpression)(exp)
+})
 
-     console.log(exp)
-     console.log('*********************')
-
-    return {
-        parseType: 'expression',
-        expression: reject(filterExpression)(exp)
-    }
-}
-
-const projectBracketExpression = (exp) =>  {   
-    
-    //console.log(reject(filterExpression)(exp))
-    //console.log('*********************')
-
-    return {
-        parseType: 'expression',
-        expression: reject(filterExpression)(exp)
-    }
-}
 
 const die = compose(map(projectDie), sequence)([digits, str('d'), digits])
 
@@ -53,5 +37,23 @@ const bracketExpression = compose(map(projectBracketExpression), sequence)([str(
 
 const expressions = compose(many, or)([skip(whitespace), expression])
 
-//
-console.log(compose(reject(isNil), fold, parse)(expressions, ' (2d6 + 2) * 22 +  4d8 - (4000 - 16d100 * 3d8)'))
+const calculation = compose(reject(isNil), fold, parse)(expressions, ' 4d6 * 100')
+
+const calculateDie = (input) => {
+    if (input.type === 'die'){
+        return {
+            type: 'number',
+            number: input.number * (Math.ceil(Math.random() * 5) + 1)
+        }
+    } else {
+        return input
+    }
+}
+
+const evaluate = (calculation) => {
+    console.log('here')
+    const mapDie = rMap(calculateDie)(calculation)
+   return mapDie
+}
+
+console.log(evaluate(calculation))
