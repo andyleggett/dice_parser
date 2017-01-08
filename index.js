@@ -1,4 +1,4 @@
-const {many, sequence, or, digits, str, whitespace, optWhitespace, parse, map, skip, fold, lazy} = require('./parser')
+const {many, sequence, or, digits, str, whitespace, parse, map, skip, fold, lazy, andThen, orElse} = require('./parser')
 const {compose, reject, isNil, prop, init, drop, map: rMap, merge} = require('ramda')
 
 const filterExpression = (item) => (item === '(' || item === ')' || item === undefined)
@@ -19,9 +19,9 @@ const projectOperator = (op) => ({
     operation: op
 })
 
-const projectBracketExpression = (exp) =>  ({
-    type: 'subexpression',
-    subexpression: reject(filterExpression)(exp)
+const projectExpression = (exp) =>  ({
+    type: 'expression',
+    expression: exp
 })
 
 
@@ -31,13 +31,13 @@ const num = map(projectNumber)(digits)
 
 const operator = compose(map(projectOperator), or)([str('+'), str('-'), str('*'), str('/')])
 
-const expression = lazy(() => or([die, num, operator, skip(whitespace), bracketExpression]))
+const expression = lazy(() =>  or([die, num, operator, bracketExpression, whitespace]))
 
-const bracketExpression = compose(map(projectBracketExpression), sequence)([str(')'), many(expression), str('(')])
+const bracketExpression = compose(map(projectExpression), sequence)([str(')'), many(expression), str('(')])
 
-const expressions = compose(many, or)([skip(whitespace), expression])
+const expressions = compose(many, or)([whitespace, expression])
 
-const calculation = compose(reject(isNil), fold, parse)(expressions, ' 4d6 * 100')
+//const calculation = parse(expressions, ' 4d6 * 100 * (2d6 + 8)')
 
 const calculateDie = (input) => {
     if (input.type === 'die'){
@@ -51,9 +51,12 @@ const calculateDie = (input) => {
 }
 
 const evaluate = (calculation) => {
-    console.log('here')
     const mapDie = rMap(calculateDie)(calculation)
    return mapDie
 }
 
-console.log(evaluate(calculation))
+//console.log(calculation)
+
+const simple = andThen(digits, whitespace)
+
+const calculationSimple = parse(simple, '4d6 + 4 ')

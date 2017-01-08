@@ -2,7 +2,11 @@ const {reduce, flatten, tail, prepend, curry} = require('ramda');
 
 //PARSER TYPE
 const _Parser = function(action) {
-    this.action = action
+    this.action = (input) => {
+        var result = action(input)
+        console.log(result)
+        return result
+    }
 }
 
 var Parser = (action) => new _Parser(action)
@@ -22,23 +26,13 @@ const _Failure = function(message){
 const Failure = (message) => new _Failure(message)
 
 //HELPERS
-const succeed = (value) => {
-    return Parser((input) => {
-        return Success(value)
-    })
-}
-
-const fail = (message) => {
-    return Parser((input, remaining) => {
-        return Failure(message)
-    })
-}
-
 const isSuccess = (result) => result instanceof _Success
 
 const isFailure = (result) => result instanceof _Failure
 
 const first = (pair) => pair[0]
+
+const parse = (parser, input) => parser.action(input)
 
 //COMBINATORS
 const orElse = curry((parser1, parser2) => {
@@ -91,10 +85,6 @@ const map = curry((f, parser) => {
     })
 })
 
-const fold = (parser) => {
-    return parser.value
-}
-
 const lazy = (f) => {
     const parser = Parser((input) => {
         parser.action = f().action
@@ -122,21 +112,21 @@ const many = (parser) => {
     })
 }
 
-const skip = (parser) => {
-    return Parser((input) => {   
+const skip = curry((parser1, parser2) => {
+    return Parser((input) => { 
         const result = parser.action(input)
-
         if (isSuccess(result)){
             return Success(undefined, result.remaining)
         } else {
             return result
         }
     })
-}
+})
 
 //PARSERS
 const str = (str) => {
     return Parser((input) => {   
+        console.log('string - ' + str)
         const test = input.slice(0, str.length)
 
         if (test === str){
@@ -151,6 +141,7 @@ const str = (str) => {
 
 const regex = (regexp) => {
     return Parser((input) => {
+        console.log('regex - ' + regexp)
         const match = input.match(regexp)
 
         if (match !== null && (match[0] === input.substr(0, match[0].length))){
@@ -168,7 +159,6 @@ const digits = regex(/[0-9]+/)
 
 const whitespace = regex(/\s+/)
 
-const parse = (parser, input) => parser.action(input)
 
 module.exports = {  
     str,
@@ -181,7 +171,6 @@ module.exports = {
     sequence,
     or,
     map,
-    fold,
     many,
     skip,
     lazy,
