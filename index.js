@@ -1,7 +1,6 @@
 const {many, sequence, or, digits, str, whitespace, parse, map, skip, fold, lazy, andThen, orElse} = require('./parser')
 const {compose, reject, isNil, prop, init, drop, map: rMap, merge} = require('ramda')
-
-const filterExpression = (item) => (item === '(' || item === ')' || item === undefined)
+const Stack = require('./stack')
 
 const projectDie = (die) => ({
     type: 'die',
@@ -57,6 +56,19 @@ const evaluate = (calculation) => {
 
 //console.log(calculation)
 
-const simple = andThen(digits, whitespace)
+//const simple = andThen(digits, whitespace)
 
-const calculationSimple = parse(simple, '4d6 + 4 ')
+//const calculationSimple = parse(simple, '4d6 + 4 ')
+
+let stack = Stack.empty()
+
+console.log(Stack.isEmpty(stack))
+
+stack = Stack.push(5, stack)
+stack = Stack.push(10, stack)
+stack = Stack.pop(stack)
+stack = Stack.pop(stack)
+stack = Stack.pop(stack)
+
+console.log(Stack.isEmpty(stack))
+console.log(Stack.peek(stack))
