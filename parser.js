@@ -1,4 +1,10 @@
-const {reduce, flatten, tail, prepend, curry, compose} = require('ramda');
+const {reduce, flatten, tail, prepend, curry, compose, apply} = require('ramda');
+
+
+const log = (item) => {
+    console.log(item)
+    return item
+}
 
 //PARSER TYPE
 const _Parser = function(action) {
@@ -30,6 +36,23 @@ const first = (pair) => pair[0]
 
 const parse = (parser, input) => parser.action(input)
 
+const fold = (result) => {
+    if (isSuccess(result) === true){
+        return {
+            success: true,
+            return: result.value,
+            remaining: result.remaining
+        }
+    } else {
+        return {
+            sucess: false,
+            error: result.message
+        }
+    }
+}
+
+const mergeResults = compose(flatten, prepend)
+
 //COMBINATORS
 const orElse = curry((parser1, parser2) => {
     return Parser((input) => {
@@ -38,7 +61,7 @@ const orElse = curry((parser1, parser2) => {
         if (isSuccess(result) === true){
             return result;
         } else {
-           return parser2.action(input) 
+           return parser2.action(input)
         }
     })
 })
@@ -51,7 +74,7 @@ const andThen = curry((parser2, parser1) => {
             const result2 = parser2.action(result1.remaining)
 
             if (isSuccess(result2) === true){
-                return Success(prepend(result1.value, result2.value), result2.remaining)
+                return Success(mergeResults(result1.value, result2.value), result2.remaining)
             } else {
                 return result2
             }
@@ -73,13 +96,17 @@ const map = curry((f, parser) => {
     return Parser((input) => {
         const result = parser.action(input)
 
-        if (isSuccess(result)){
+        if (isSuccess(result) === true){
             return Success(f(result.value), result.remaining)
         } else {
             return result
         }
     })
 })
+
+const sequenceMap = (parsers, mapper) => {
+    return compose(map(apply(mapper)), sequence)(parsers)
+}
 
 const lazy = (f) => {
     const parser = Parser((input) => {
@@ -92,24 +119,22 @@ const lazy = (f) => {
 
 const zeroOrMore = (parser, input) => {
     const result = parser.action(input)
-    if (isSuccess(result)){
+    if (isSuccess(result) === true){
         const nextResult = zeroOrMore(parser, result.remaining)
-        return Success(compose(flatten, prepend)(result.value, nextResult.value), nextResult.remaining)
+        return Success(mergeResults(result.value, nextResult.value), nextResult.remaining)
     } else {
         return Success([], input)
     }
 }
 
 const many = (parser) => {
-    return Parser((input) => {
-        return zeroOrMore(parser, input)
-    })
+    return Parser((input) => zeroOrMore(parser, input))
 }
 
 const many1 = (parser) => {
     return Parser((input) => {
         const result = parser.action(input)
-        if (isSuccess(result)){
+        if (isSuccess(result) === true){
             return zeroOrMore(parser, input)
         } else {
             return result
@@ -120,12 +145,37 @@ const many1 = (parser) => {
 const skip = (parser) => {
     return Parser((input) => { 
         const result = parser.action(input)
-        if (isSuccess(result)){
+        if (isSuccess(result) === true){
             return Success([], result.remaining)
         } else {
             return result
         }
     })
+}
+
+const of = (value) => {
+    return Parser((input) => Success(value, input))
+}
+
+const ap = curry((fP, xP) => {
+    return sequenceMap([xP, fP], (f, x) => f(x))
+})
+
+const chain = curry((f, parser) => {
+    return Parser((input) => {
+        const result = parser1.action(input)
+
+        if (isSuccess(result) === true){
+            const nextParser = f(result.value)
+            return nextParser(result.remaining)
+        } else {
+            return result
+        }
+    })
+})
+
+const lift2 = (f, xP, yP) => {
+    return ap(ap(of(f), xP), yP)
 }
 
 //PARSERS
@@ -159,11 +209,18 @@ module.exports = {
     orElse,
     andThen,
     sequence,
+    sequenceMap,
     or,
     map,
     many,
     many1,
     skip,
     lazy,
-    parse
+    of,
+    ap,
+    lift2,
+    chain,
+    bind: chain,
+    parse,
+    fold
 }

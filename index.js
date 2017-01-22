@@ -1,4 +1,4 @@
-const {many, many1, sequence, or, str, regex, parse, skip, map, andThen, orElse} = require('./parser')
+const {many, many1, sequence, or, str, regex, parse, fold, skip, map, andThen, orElse, ap, chain, of} = require('./parser')
 const {compose, reject, isNil, prop, init, drop, map: rMap, merge, reduce, range} = require('ramda')
 
 const projectDie = (die) => ({
@@ -43,7 +43,12 @@ const whitespace = regex(/\s+/)
 
 const expression = compose(many1, or)([die, num, operator, bracket, skip(whitespace)])
 
-const calculation = parse(expression, '12 - (7d2     +    8)')
+const calculation = compose(parse)(expression, '( _ 16d100 * 2d12   ) - (7d2     +    8)')
+
+
+const test = ap(of((x) => +x + 1), digit)
+
+console.log(parse(test, '4'))
 
 const calculateDie = (input) => {
     if (input.type === 'die'){
