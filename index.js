@@ -1,6 +1,7 @@
 const {many, sequence, or, digits, str, whitespace, parse, map, skip, fold, lazy, andThen, orElse} = require('./parser')
-const {compose, reject, isNil, prop, init, drop, map: rMap, merge} = require('ramda')
+const {compose, reject, isNil, prop, init, drop, map: rMap, merge, reduce, range} = require('ramda')
 const Stack = require('./stack')
+const Queue = require('./queue')
 
 const projectDie = (die) => ({
     type: 'die',
@@ -32,9 +33,6 @@ const operator = compose(map(projectOperator), or)([str('+'), str('-'), str('*')
 
 const expression = lazy(() =>  or([die, num, operator, bracketExpression, whitespace]))
 
-const bracketExpression = compose(map(projectExpression), sequence)([str(')'), many(expression), str('(')])
-
-const expressions = compose(many, or)([whitespace, expression])
 
 //const calculation = parse(expressions, ' 4d6 * 100 * (2d6 + 8)')
 
@@ -62,13 +60,17 @@ const evaluate = (calculation) => {
 
 let stack = Stack.empty()
 
-console.log(Stack.isEmpty(stack))
-
 stack = Stack.push(5, stack)
 stack = Stack.push(10, stack)
 stack = Stack.pop(stack)
-stack = Stack.pop(stack)
-stack = Stack.pop(stack)
 
-console.log(Stack.isEmpty(stack))
-console.log(Stack.peek(stack))
+console.time('queue enqueue')
+let queue = reduce((acc, num) => Queue.enqueue(num, acc), Queue.empty())(range(1, 1000000))
+console.timeEnd('queue enqueue')
+
+console.time('queue dequeue')
+while(!Queue.isEmpty(queue)){
+    
+    queue = Queue.dequeue(queue)
+}
+console.timeEnd('queue dequeue')

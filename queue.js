@@ -1,39 +1,55 @@
 const Stack = require('./stack')
 
-const _Queue = function(item, inbound, outbound) {
-    this.head = item
-    this.inbound = inbound
-    this.outbound = outbound
+const _Queue = function (front, back) {
+    this.front = front
+    this.back = back
 }
 
-const Queue = (item, queue) => new _Queue(item, queue)
+const Queue = (front, back) => new _Queue(front, back)
 
-const _Empty = function(){}
+const _Empty = function () {}
 
 const Empty = new _Empty()
 
-const enqueue = function(item, queue){
-    if (Stack.isEmpty(queue.outbound)){
-        return Queue(queue.head, queue.inbound, Stack.push(value, queue.outbound))
+const enqueue = function (value, queue) {
+    return Queue(queue.front, Stack.push(value, queue.back))
+}
+
+const dequeue = function (queue) {
+    queue = swapStacks(queue)
+
+    queue.front = Stack.pop(queue.front)
+
+    return Queue(queue.front, queue.back)
+}
+
+const peek = function (queue) {
+    queue = swapStacks(queue)
+
+    return queue.front.head
+}
+
+const empty = function () {
+    return Queue(Stack.empty(), Stack.empty())
+}
+
+const isEmpty = function (queue) {
+    return Stack.isEmpty(queue.front) && Stack.isEmpty(queue.back)
+}
+
+const swapStacks = (queue) => {
+      if (isEmpty(queue)) {
+        return empty()
     }
 
-    return Queue(queue.head, Stack.push(value, queue.inbound), queue.outbound)
-}
+    if (Stack.isEmpty(queue.front)) {
+        while (!Stack.isEmpty(queue.back)) {
+            queue.front = Stack.push(Stack.peek(queue.back), queue.front)
+            queue.back = Stack.pop(queue.back)
+        }
+    }
 
-const dequeue = function(queue){
-  
-}
-
-const peek = function(queue){
-    return queue.head
-}
-
-const empty = function(){
-    return Queue(Empty)
-}
-
-const isEmpty = function(stack){
-    
+    return Queue(queue.front, queue.back)
 }
 
 module.exports = {
