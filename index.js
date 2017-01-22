@@ -1,7 +1,5 @@
-const {many, sequence, or, digits, str, whitespace, parse, map, skip, fold, lazy, andThen, orElse} = require('./parser')
+const {many, many1, sequence, or, str, regex, parse, skip, map, andThen, orElse} = require('./parser')
 const {compose, reject, isNil, prop, init, drop, map: rMap, merge, reduce, range} = require('ramda')
-const Stack = require('./stack')
-const Queue = require('./queue')
 
 const projectDie = (die) => ({
     type: 'die',
@@ -19,11 +17,19 @@ const projectOperator = (op) => ({
     operation: op
 })
 
-const projectExpression = (exp) =>  ({
-    type: 'expression',
-    expression: exp
+const projectBracket = (br) => ({
+    type: 'bracket',
+    bracket: br
 })
 
+const projectWhitespace = (ws) => ({
+    type: 'whitespace',
+    whitespace: ws
+})
+
+const digit = regex(/[0-9]/)
+const digits = regex(/[0-9]+/)
+//const whitespace = regex(/\s+/)
 
 const die = compose(map(projectDie), sequence)([digits, str('d'), digits])
 
@@ -31,10 +37,13 @@ const num = map(projectNumber)(digits)
 
 const operator = compose(map(projectOperator), or)([str('+'), str('-'), str('*'), str('/')])
 
-const expression = lazy(() =>  or([die, num, operator, bracketExpression, whitespace]))
+const bracket = compose(map(projectBracket), or)([str('('), str(')')])
 
+const whitespace = regex(/\s+/)
 
-//const calculation = parse(expressions, ' 4d6 * 100 * (2d6 + 8)')
+const expression = compose(many1, or)([die, num, operator, bracket, skip(whitespace)])
+
+const calculation = parse(expression, '12 - (7d2     +    8)')
 
 const calculateDie = (input) => {
     if (input.type === 'die'){
@@ -52,25 +61,4 @@ const evaluate = (calculation) => {
    return mapDie
 }
 
-//console.log(calculation)
-
-//const simple = andThen(digits, whitespace)
-
-//const calculationSimple = parse(simple, '4d6 + 4 ')
-
-let stack = Stack.empty()
-
-stack = Stack.push(5, stack)
-stack = Stack.push(10, stack)
-stack = Stack.pop(stack)
-
-console.time('queue enqueue')
-let queue = reduce((acc, num) => Queue.enqueue(num, acc), Queue.empty())(range(1, 1000000))
-console.timeEnd('queue enqueue')
-
-console.time('queue dequeue')
-while(!Queue.isEmpty(queue)){
-    
-    queue = Queue.dequeue(queue)
-}
-console.timeEnd('queue dequeue')
+console.log(calculation)

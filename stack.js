@@ -30,7 +30,14 @@ const isEmpty = (stack) => {
 }
 
 const reverse = (stack) => {
-    return stack
+    let reverseStack = empty()
+
+    while (!isEmpty(stack)) {
+        reverseStack = push(peek(stack), reverseStack)
+        stack = pop(stack)
+    }
+
+    return reverseStack
 }
 
 module.exports = {

@@ -43,10 +43,8 @@ const swapStacks = (queue) => {
     }
 
     if (Stack.isEmpty(queue.front)) {
-        while (!Stack.isEmpty(queue.back)) {
-            queue.front = Stack.push(Stack.peek(queue.back), queue.front)
-            queue.back = Stack.pop(queue.back)
-        }
+        queue.front = Stack.reverse(queue.back)
+        queue.back = Stack.empty()
     }
 
     return Queue(queue.front, queue.back)
