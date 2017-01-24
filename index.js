@@ -1,10 +1,55 @@
-const {many, many1, sequence, or, str, regex, parse, fold, skip, map, andThen, orElse, ap, chain, of} = require('./parser')
-const {compose, reject, isNil, prop, init, drop, map: rMap, merge, reduce, range} = require('ramda')
+const {many, many1, sequence, anyOf, str, regex, parse, fold, ignore, map, andThen, orElse, ap, chain, of, lift2, times} = require('./parser')
+const {add, compose, reject, isNil, prop, init, drop, map: rMap, merge, reduce, range} = require('ramda')
+
+const log = (item) => {
+    console.log(item)
+    return item
+}
 
 const projectDie = (die) => ({
     type: 'die',
     number: Number(die[0]),
     diceType: Number(die[2])
+})
+
+const projectKeepDie = (die) => ({
+    type: 'keepdie',
+    number: Number(die[0]),
+    diceType: Number(die[2]),
+    keep: {
+        type: (die[3] === 'kl' ? 'lowest' : 'highest'),
+        number: Number(die[4])
+    }
+})
+
+const projectDropDie = (die) => ({
+    type: 'dropdie',
+    number: Number(die[0]),
+    diceType: Number(die[2]),
+    drop: {
+        type: (die[3] === 'dh' ? 'highest' : 'lowest'),
+        number: Number(die[4])
+    }
+})
+
+const projectSuccessDie = (die) => ({
+    type: 'successdie',
+    number: Number(die[0]),
+    diceType: Number(die[2]),
+    success: {
+        comparator: die[3],
+        target: Number(die[4])
+    }
+})
+
+const projectRerollDie = (die) => ({
+    type: 'rerolldie',
+    number: Number(die[0]),
+    diceType: Number(die[2]),
+    reroll: {
+        comparator: die[4],
+        target: Number(die[5])
+    }
 })
 
 const projectNumber = (num) => ({
@@ -29,26 +74,30 @@ const projectWhitespace = (ws) => ({
 
 const digit = regex(/[0-9]/)
 const digits = regex(/[0-9]+/)
-//const whitespace = regex(/\s+/)
+const whitespace = regex(/\s+/)
 
 const die = compose(map(projectDie), sequence)([digits, str('d'), digits])
 
+const keepDie = compose(map(projectKeepDie), map(log), sequence)([digits, str('d'), digits, anyOf([str('kh'), str('kl'), str('k')]), digits])
+
+const dropDie = compose(map(projectDropDie), map(log),sequence)([digits, str('d'), digits, anyOf([str('dh'), str('dl'), str('d')]), digits])
+
+const successDie = compose(map(projectSuccessDie), map(log),sequence)([digits, str('d'), digits, anyOf([str('<='), str('>='), str('<'), str('>'), str('=')]), digits])
+
+const reroll = sequence([anyOf([str('ro'), str('r')]), times(2, anyOf([str('<='), str('>='), str('<'), str('>')])), digits])
+
+
+const rerollDie = compose(map(projectRerollDie),map(log), sequence)([digits, str('d'), digits, many1(reroll)])
+
 const num = map(projectNumber)(digits)
 
-const operator = compose(map(projectOperator), or)([str('+'), str('-'), str('*'), str('/')])
+const operator = compose(map(projectOperator), anyOf)([str('+'), str('-'), str('*'), str('/')])
 
-const bracket = compose(map(projectBracket), or)([str('('), str(')')])
+const bracket = compose(map(projectBracket), anyOf)([str('('), str(')')])
 
-const whitespace = regex(/\s+/)
+const expression = compose(many, anyOf)([rerollDie, successDie, dropDie, keepDie, die, num, operator, bracket, ignore(whitespace)])
 
-const expression = compose(many1, or)([die, num, operator, bracket, skip(whitespace)])
-
-const calculation = compose(parse)(expression, '( _ 16d100 * 2d12   ) - (7d2     +    8)')
-
-
-const test = ap(of((x) => +x + 1), digit)
-
-console.log(parse(test, '4'))
+const calculation = compose(fold, parse)(expression, '( 16d100k19 * 4d12dl2   ) - (7d12>=7    +    8d100r50r25r75)')
 
 const calculateDie = (input) => {
     if (input.type === 'die'){

@@ -1,4 +1,4 @@
-const {reduce, flatten, tail, prepend, curry, compose, apply} = require('ramda');
+const {reduce, flatten, tail, prepend, curry, compose, apply, repeat} = require('ramda');
 
 
 const log = (item) => {
@@ -40,7 +40,7 @@ const fold = (result) => {
     if (isSuccess(result) === true){
         return {
             success: true,
-            return: result.value,
+            output: result.value,
             remaining: result.remaining
         }
     } else {
@@ -66,15 +66,13 @@ const orElse = curry((parser1, parser2) => {
     })
 })
 
-const andThen = curry((parser2, parser1) => {
+const andThen = curry((parser1, parser2) => {
     return Parser((input) => {
         var result1 = parser1.action(input)
-
         if (isSuccess(result1) === true){
             const result2 = parser2.action(result1.remaining)
-
             if (isSuccess(result2) === true){
-                return Success(mergeResults(result1.value, result2.value), result2.remaining)
+                return Success(mergeResults(result1.value, [result2.value]), result2.remaining)
             } else {
                 return result2
             }
@@ -84,7 +82,7 @@ const andThen = curry((parser2, parser1) => {
     })
 })
 
-const or = (parsers) => {
+const anyOf = (parsers) => {
     return reduce(orElse, parsers[0])(tail(parsers))
 }
 
@@ -121,7 +119,7 @@ const zeroOrMore = (parser, input) => {
     const result = parser.action(input)
     if (isSuccess(result) === true){
         const nextResult = zeroOrMore(parser, result.remaining)
-        return Success(mergeResults(result.value, nextResult.value), nextResult.remaining)
+        return Success(mergeResults([result.value], [nextResult.value]), nextResult.remaining)
     } else {
         return Success([], input)
     }
@@ -142,7 +140,7 @@ const many1 = (parser) => {
     })
 }
 
-const skip = (parser) => {
+const ignore = (parser) => {
     return Parser((input) => { 
         const result = parser.action(input)
         if (isSuccess(result) === true){
@@ -174,8 +172,37 @@ const chain = curry((f, parser) => {
     })
 })
 
-const lift2 = (f, xP, yP) => {
+const lift2 = curry((f, xP, yP) => {
     return ap(ap(of(f), xP), yP)
+})
+
+//zero or one time
+const opt = (parser) => {
+    
+}
+
+const between = (parser1, parser2, parser3) => sequence([ignore(parser1), parser2, ignore(parser3)])
+
+const sepBy = () => {
+
+}
+
+const sepBy1 = () => {
+
+}
+
+const satisfy = () => {
+
+}
+
+const times = (num, parser) => sequence(repeat(parser, num))
+
+const atMost = (limit, parser) => {
+
+}
+
+const atLeast = () => {
+
 }
 
 //PARSERS
@@ -210,11 +237,19 @@ module.exports = {
     andThen,
     sequence,
     sequenceMap,
-    or,
+    opt,
+    between,
+    sepBy,
+    sepBy1,
+    satisfy,
+    times,
+    atMost,
+    atLeast,
+    anyOf,
     map,
     many,
     many1,
-    skip,
+    ignore,
     lazy,
     of,
     ap,
