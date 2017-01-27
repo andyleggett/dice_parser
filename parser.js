@@ -1,11 +1,5 @@
 const {reduce, flatten, tail, prepend, curry, compose, apply, repeat} = require('ramda');
 
-
-const log = (item) => {
-    console.log(item)
-    return item
-}
-
 //PARSER TYPE
 const _Parser = function(action) {
     this.action = action
@@ -35,6 +29,11 @@ const isFailure = (result) => result instanceof _Failure
 const first = (pair) => pair[0]
 
 const parse = (parser, input) => parser.action(input)
+
+const log = (item) => {
+    console.log(item)
+    return item
+}
 
 const fold = (result) => {
     if (isSuccess(result) === true){
@@ -155,6 +154,10 @@ const of = (value) => {
     return Parser((input) => Success(value, input))
 }
 
+const fail = (value) => {
+    return Parser((input) => Failure('Expected ' + value))
+}
+
 const ap = curry((fP, xP) => {
     return sequenceMap([xP, fP], (f, x) => f(x))
 })
@@ -176,34 +179,65 @@ const lift2 = curry((f, xP, yP) => {
     return ap(ap(of(f), xP), yP)
 })
 
-//zero or one time
-const opt = (parser) => {
-    
+const skip = (parser1, parser2) => {
+    return Parser((input) => {
+        const result1 = parser1.action(input)
+
+        if (isSuccess(result1) === true){
+            return parser2.action(result1.remaining)
+        } else {
+            return result1
+        }
+    })
 }
 
 const between = (parser1, parser2, parser3) => sequence([ignore(parser1), parser2, ignore(parser3)])
 
-const sepBy = () => {
+const sepBy1 = (match, sep) => andThen(match, many(skip(sep, match)))
 
+const sepBy = (match, sep) => {
+    return Parser((input) => {
+        const result = sepBy1(match, sep).action(input)
+
+        if (isSuccess(result) === true){
+            return result
+        } else {
+            return Success([], result.remaining)
+        }
+    })
 }
 
-const sepBy1 = () => {
 
+const times = (min, max, parser) => {
+    return Parser((input) => {
+        let times = 0
+        let values = []
+        let result
+        let remaining = input
+
+        while(times < max){
+            result = parser.action(remaining)
+
+            if (isSuccess(result) === true){
+                values = mergeResults(values, result.value)
+                remaining = result.remaining
+                times += 1
+            } else if (times >= min) {
+                break
+            } else {
+                return result
+            }
+        }
+     
+        return Success(values, remaining)
+    })
 }
 
-const satisfy = () => {
+const atMost = (upperlimit, parser) => times(0, upperlimit, parser)
 
-}
+const atLeast = (lowerlimit, parser) => times(lowerlimit, Infinity, parser)
 
-const times = (num, parser) => sequence(repeat(parser, num))
-
-const atMost = (limit, parser) => {
-
-}
-
-const atLeast = () => {
-
-}
+const opt = (parser) => times(0, 1, parser)
 
 //PARSERS
 const str = (str) => {
@@ -230,9 +264,22 @@ const regex = (regexp) => {
     })
 }
 
+const satisfy = (pred) => {
+    return Parser((input) => {
+        const test = input.slice(0, 0)
+
+        if (pred(test) === true){
+            return Success(test, input.substr(1))
+        } else {
+            return Failure('Expected ')
+        }
+    })
+}
+
 module.exports = {  
     str,
     regex,
+    satisfy,
     orElse,
     andThen,
     sequence,
@@ -241,7 +288,6 @@ module.exports = {
     between,
     sepBy,
     sepBy1,
-    satisfy,
     times,
     atMost,
     atLeast,
@@ -251,11 +297,12 @@ module.exports = {
     many1,
     ignore,
     lazy,
+    skip,
     of,
+    fail,
     ap,
     lift2,
     chain,
-    bind: chain,
     parse,
     fold
 }

@@ -1,4 +1,4 @@
-const {many, many1, sequence, anyOf, str, regex, parse, fold, ignore, map, andThen, orElse, ap, chain, of, lift2, times} = require('./parser')
+const {many, many1, sequence, anyOf, str, regex, parse, fold, ignore, map, andThen, orElse, ap, chain, of, lift2, times, atMost, atLeast, between, opt, skip, sepBy, sepBy1} = require('./parser')
 const {add, compose, reject, isNil, prop, init, drop, map: rMap, merge, reduce, range} = require('ramda')
 
 const log = (item) => {
@@ -86,7 +86,6 @@ const successDie = compose(map(projectSuccessDie), map(log),sequence)([digits, s
 
 const reroll = sequence([anyOf([str('ro'), str('r')]), times(2, anyOf([str('<='), str('>='), str('<'), str('>')])), digits])
 
-
 const rerollDie = compose(map(projectRerollDie),map(log), sequence)([digits, str('d'), digits, many1(reroll)])
 
 const num = map(projectNumber)(digits)
@@ -97,22 +96,10 @@ const bracket = compose(map(projectBracket), anyOf)([str('('), str(')')])
 
 const expression = compose(many, anyOf)([rerollDie, successDie, dropDie, keepDie, die, num, operator, bracket, ignore(whitespace)])
 
-const calculation = compose(fold, parse)(expression, '( 16d100k19 * 4d12dl2   ) - (7d12>=7    +    8d100r50r25r75)')
+//const calculation = compose(fold, parse)(expression, '( 16d100k19 * 4d12dl2   ) - (7d12>=7    +    8d100r50r25r75)')
 
-const calculateDie = (input) => {
-    if (input.type === 'die'){
-        return {
-            type: 'number',
-            number: input.number * (Math.ceil(Math.random() * 5) + 1)
-        }
-    } else {
-        return input
-    }
-}
+const test = sepBy(digits, between(opt(whitespace), str(','), opt(whitespace)))
 
-const evaluate = (calculation) => {
-    const mapDie = rMap(calculateDie)(calculation)
-   return mapDie
-}
+console.log(parse(test, '-23- 2'))
 
-console.log(calculation)
+//console.log(calculation)
