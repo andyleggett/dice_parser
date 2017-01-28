@@ -1,4 +1,4 @@
-const {many, many1, sequence, anyOf, str, regex, parse, fold, ignore, map, andThen, orElse, ap, chain, of, lift2, times, atMost, atLeast, between, opt, skip, sepBy, sepBy1} = require('./parser')
+const {many, many1, sequence, sequenceMap, anyOf, str, regex, parse, fold, ignore, map, andThen, orElse, ap, chain, of, lift2, times, atMost, atLeast, between, opt, skip, sepBy, sepBy1} = require('./parser')
 const {add, compose, reject, isNil, prop, init, drop, map: rMap, merge, reduce, range} = require('ramda')
 
 const log = (item) => {
@@ -77,7 +77,7 @@ const digits = regex(/[0-9]+/)
 const whitespace = regex(/\s+/)
 
 const die = compose(map(projectDie), sequence)([digits, str('d'), digits])
-
+/*
 const keepDie = compose(map(projectKeepDie), map(log), sequence)([digits, str('d'), digits, anyOf([str('kh'), str('kl'), str('k')]), digits])
 
 const dropDie = compose(map(projectDropDie), map(log),sequence)([digits, str('d'), digits, anyOf([str('dh'), str('dl'), str('d')]), digits])
@@ -98,8 +98,13 @@ const expression = compose(many, anyOf)([rerollDie, successDie, dropDie, keepDie
 
 //const calculation = compose(fold, parse)(expression, '( 16d100k19 * 4d12dl2   ) - (7d12>=7    +    8d100r50r25r75)')
 
-const test = sepBy(digits, between(opt(whitespace), str(','), opt(whitespace)))
 
-console.log(parse(test, '-23- 2'))
 
-//console.log(calculation)
+console.log(calculation)
+*/
+
+//const test = sepBy1(digits, between(opt(whitespace), str(','), opt(whitespace)))
+
+const skipper = sequenceMap((x, y, z) => x + y + z, [digit, str('-'), digit])
+console.log(parse(skipper, '2-2'))
+//console.log(parse(die, '15d4'))
