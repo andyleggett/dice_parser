@@ -1,5 +1,50 @@
-const {many, many1, sequence, sequenceMap, anyOf, str, regex, parse, fold, ignore, map, andThen, orElse, ap, chain, of, lift2, times, atMost, atLeast, between, opt, skip, sepBy, sepBy1} = require('./parser')
-const {add, compose, reject, isNil, prop, init, drop, map: rMap, merge, reduce, range} = require('ramda')
+const {
+    many,
+    many1,
+    sequence,
+    sequenceMap,
+    anyOf,
+    noneOf,
+    eof,
+    any,
+    all,
+    choice,
+    str,
+    regex,
+    parse,
+    fold,
+    map,
+    andThen,
+    orElse,
+    ap,
+    chain,
+    of ,
+    lift2,
+    times,
+    atMost,
+    atLeast,
+    between,
+    opt,
+    skip,
+    skipRight,
+    sepBy,
+    sepBy1
+} = require('./parser')
+
+const {
+    add,
+    compose,
+    reject,
+    isNil,
+    prop,
+    init,
+    drop,
+    map: rMap,
+    merge,
+    reduce,
+    range,
+    flatten
+} = require('ramda')
 
 const log = (item) => {
     console.log(item)
@@ -42,15 +87,18 @@ const projectSuccessDie = (die) => ({
     }
 })
 
-const projectRerollDie = (die) => ({
-    type: 'rerolldie',
-    number: Number(die[0]),
-    diceType: Number(die[2]),
-    reroll: {
-        comparator: die[4],
-        target: Number(die[5])
+const projectRerollDie = (die) => {
+    console.log('die', die[3])
+    return {
+        type: 'rerolldie',
+        number: Number(die[0]),
+        diceType: Number(die[2]),
+        reroll: {
+            comparator: die[4],
+            target: Number(die[5])
+        }
     }
-})
+}
 
 const projectNumber = (num) => ({
     type: 'number',
@@ -75,36 +123,29 @@ const projectWhitespace = (ws) => ({
 const digit = regex(/[0-9]/)
 const digits = regex(/[0-9]+/)
 const whitespace = regex(/\s+/)
+const betweenWhitespace = (parser) => between(opt(whitespace), parser, opt(whitespace))
 
-const die = compose(map(projectDie), sequence)([digits, str('d'), digits])
-/*
-const keepDie = compose(map(projectKeepDie), map(log), sequence)([digits, str('d'), digits, anyOf([str('kh'), str('kl'), str('k')]), digits])
+const die = compose(map(projectDie), betweenWhitespace, sequence)([digits, str('d'), digits])
 
-const dropDie = compose(map(projectDropDie), map(log),sequence)([digits, str('d'), digits, anyOf([str('dh'), str('dl'), str('d')]), digits])
+const keepDie = compose(map(projectKeepDie), betweenWhitespace, sequence)([digits, str('d'), digits, choice([str('kh'), str('kl'), str('k')]), digits])
 
-const successDie = compose(map(projectSuccessDie), map(log),sequence)([digits, str('d'), digits, anyOf([str('<='), str('>='), str('<'), str('>'), str('=')]), digits])
+const dropDie = compose(map(projectDropDie), betweenWhitespace, sequence)([digits, str('d'), digits, choice([str('dh'), str('dl'), str('d')]), digits])
 
-const reroll = sequence([anyOf([str('ro'), str('r')]), times(2, anyOf([str('<='), str('>='), str('<'), str('>')])), digits])
+const successDie = compose(map(projectSuccessDie), betweenWhitespace, sequence)([digits, str('d'), digits, choice([str('<='), str('>='), str('<'), str('>'), str('=')]), digits])
 
-const rerollDie = compose(map(projectRerollDie),map(log), sequence)([digits, str('d'), digits, many1(reroll)])
+const reroll = sequence([choice([str('ro'), str('r')]), opt(choice([str('<='), str('>='), str('<'), str('>')])), opt(digits)])
 
-const num = map(projectNumber)(digits)
+const rerollDie = compose(map(projectRerollDie), betweenWhitespace, sequence)([digits, str('d'), digits, many(reroll)])
 
-const operator = compose(map(projectOperator), anyOf)([str('+'), str('-'), str('*'), str('/')])
+const num = compose(map(projectNumber), betweenWhitespace)(digits)
 
-const bracket = compose(map(projectBracket), anyOf)([str('('), str(')')])
+const operator = compose(map(projectOperator), betweenWhitespace, choice)([str('+'), str('-'), str('*'), str('/')])
 
-const expression = compose(many, anyOf)([rerollDie, successDie, dropDie, keepDie, die, num, operator, bracket, ignore(whitespace)])
+const bracket = compose(map(projectBracket), betweenWhitespace, choice)([str('('), str(')')])
 
-//const calculation = compose(fold, parse)(expression, '( 16d100k19 * 4d12dl2   ) - (7d12>=7    +    8d100r50r25r75)')
-
+const expression = compose(many1, choice)([rerollDie, successDie, dropDie, keepDie, die, num, operator, bracket])
 
 
-console.log(calculation)
-*/
+const calculation = compose(fold, parse)(andThen(expression, eof), '  2d10r1r2r3r>4 ')
 
-//const test = sepBy1(digits, between(opt(whitespace), str(','), opt(whitespace)))
-
-const skipper = sequenceMap((x, y, z) => x + y + z, [digit, str('-'), digit])
-console.log(parse(skipper, '2-2'))
-//console.log(parse(die, '15d4'))
+console.log(calculation.output)

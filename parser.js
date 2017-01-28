@@ -10,7 +10,8 @@ const {
     compose,
     apply,
     repeat,
-    map: listMap
+    map: listMap,
+    contains
 } = require('ramda')
 
 //PARSER TYPE
@@ -29,11 +30,12 @@ const _Success = function (value, remaining) {
 
 const Success = (value, remaining) => new _Success(value, remaining)
 
-const _Failure = function (message) {
+const _Failure = function (message, label) {
     this.message = message
+    this.label = label
 }
 
-const Failure = (message) => new _Failure(message)
+const Failure = (message, label) => new _Failure(message, label)
 
 //HELPERS
 const isSuccess = (result) => result instanceof _Success
@@ -58,8 +60,9 @@ const fold = (result) => {
         }
     } else {
         return {
-            sucess: false,
-            error: result.message
+            success: false,
+            error: result.message,
+            label: result.label
         }
     }
 }
@@ -76,6 +79,8 @@ const zeroOrMore = (parser, input) => {
 
 //COMBINATORS
 const of = (value) => Parser((input) => Success(value, input))
+
+const fail = (message) => Parser((input) => Failure(message))
 
 const orElse = curry((parser1, parser2) => Parser((input) => {
     const result = parser1.action(input)
@@ -101,6 +106,8 @@ const andThen = curry((parser1, parser2) => Parser((input) => {
         return result1
     }
 }))
+
+const notFollowedBy = () => {}
 
 const choice = (parsers) => reduce(orElse, head(parsers))(tail(parsers))
 
@@ -154,11 +161,13 @@ const many1 = (parser) => Parser((input) => {
     }
 })
 
-const skip = (parser1, parser2) => compose(map(([x,y]) => y), andThen)(parser1, parser2)
+const skip = (parser1, parser2) => sequenceMap((x, y) => y, [parser1, parser2])
 
-const skipRight = (parser1, parser2) => compose(map(([x,y]) => x), andThen)(parser1, parser2)
+const skipRight = (parser1, parser2) => sequenceMap((x, y) => x, [parser1, parser2])
 
-const between = (parser1, parser2, parser3) => sequence([ignore(parser1), parser2, ignore(parser3)])
+const skipMany = () => {}
+
+const between = (parser1, parser2, parser3) => sequenceMap((x, y, z) => y, [parser1, parser2, parser3])
 
 const sepBy1 = (match, sep) => andThen(match, many(skip(sep, match)))
 
@@ -201,6 +210,34 @@ const atLeast = (lowerlimit, parser) => times(lowerlimit, Infinity, parser)
 
 const opt = (parser) => times(0, 1, parser)
 
+const takeWhile = (pred) => {
+
+}
+
+const lookAhead = (str) => Parser((input) => {
+     const test = input.slice(0, str.length)
+
+    if (test === str) {
+        return Success('', input)
+    } else {
+        return Failure('Expected ' + str)
+    } 
+})
+
+const lookAheadP = (parser) => Parser((input) => {
+    const result = parser.action(input)
+
+    if (isSuccess(result) === true){
+        return Success('', input)
+    } else {
+        return Failure('Expected parser to work')
+    }
+})
+
+const lookAheadRegEx = (regex) => {
+    
+}
+
 const lazy = (f) => {
     const parser = Parser((input) => {
         parser.action = f().action
@@ -209,6 +246,10 @@ const lazy = (f) => {
 
     return parser
 }
+
+const label = curry((lbl, parser) => Parser((input) => {
+
+}, lbl))
 
 //PARSERS
 const str = (str) => Parser((input) => {
@@ -233,7 +274,7 @@ const regex = (regexp) => Parser((input) => {
 
 
 const satisfy = (pred) => Parser((input) => {
-    const test = input.slice(0, 0)
+    const test = input.charAt(0)
 
     if (pred(test) === true) {
         return Success(test, input.substr(1))
@@ -244,14 +285,41 @@ const satisfy = (pred) => Parser((input) => {
 
 const anyOf = (chars) => compose(choice, listMap(str))(chars)
 
+const noneOf = (chars) => Parser((input) => {
+
+    const test = input.charAt(0)
+
+    if (!contains(test, chars)){
+        return Success(test, input.substr(1))
+    } else {
+        return Failure('Expected none of ' + chars)
+    }
+    
+})
+
+const eof = Parser((input) => {
+    console.log(input)
+    return (input === '') ? Success('', '') : Failure('Expected end of input')
+})
+
+const all = Parser((input) => Success(input, ''))
+
+const any = Parser((input) => Success(input.charAt(0), input.substr(1)))
+
 module.exports = {
     str,
     regex,
     satisfy,
     anyOf,
+    noneOf,
+    eof,
+    all, 
+    any,
     of,
+    fail,
     orElse,
     andThen,
+    notFollowedBy,
     choice,
     sequence,
     sequenceMap,
@@ -268,6 +336,10 @@ module.exports = {
     lazy,
     skip,
     skipRight,
+    skipMany,
+    lookAhead,
+    lookAheadP,
+    lookAheadRegEx,
     ap,
     lift2,
     chain,
