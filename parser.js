@@ -1,4 +1,5 @@
 const {
+    flip,
     reduce,
     flatten,
     head,
@@ -8,7 +9,8 @@ const {
     curry,
     compose,
     apply,
-    repeat
+    repeat,
+    map: listMap
 } = require('ramda')
 
 //PARSER TYPE
@@ -62,19 +64,19 @@ const fold = (result) => {
     }
 }
 
-const mergeResults = compose(flatten, prepend)
-
 const zeroOrMore = (parser, input) => {
     const result = parser.action(input)
     if (isSuccess(result) === true) {
         const nextResult = zeroOrMore(parser, result.remaining)
-        return Success(mergeResults([result.value], [nextResult.value]), nextResult.remaining)
+        return Success(prepend(result.value, nextResult.value), nextResult.remaining)
     } else {
         return Success([], input)
     }
 }
 
 //COMBINATORS
+const of = (value) => Parser((input) => Success(value, input))
+
 const orElse = curry((parser1, parser2) => Parser((input) => {
     const result = parser1.action(input)
 
@@ -100,11 +102,7 @@ const andThen = curry((parser1, parser2) => Parser((input) => {
     }
 }))
 
-const anyOf = (parsers) => reduce(orElse, parsers[0])(tail(parsers))
-
-const of = (value) => Parser((input) => Success(value, input))
-
-const fail = (value) => Parser((input) => Failure('Expected ' + value))
+const choice = (parsers) => reduce(orElse, head(parsers))(tail(parsers))
 
 const map = curry((f, parser) => Parser((input) => {
     const result = parser.action(input)
@@ -118,7 +116,9 @@ const map = curry((f, parser) => Parser((input) => {
 
 const ap = curry((fP, xP) => compose(map(([f, x]) => f(x)), andThen)(fP, xP))
 
-const lift2 = curry((f, xP, yP) => ap(ap(of(f), xP), yP))
+const apRev = flip(ap)
+
+const lift2 = curry((f, xP, yP) => compose(apRev(yP), apRev(xP), of)(f))
 
 const chain = curry((f, parser) => Parser((input) => {
     const result = parser.action(input)
@@ -154,16 +154,9 @@ const many1 = (parser) => Parser((input) => {
     }
 })
 
-const ignore = (parser) => Parser((input) => {
-    const result = parser.action(input)
-    if (isSuccess(result) === true) {
-        return Success([], result.remaining)
-    } else {
-        return result
-    }
-})
-
 const skip = (parser1, parser2) => compose(map(([x,y]) => y), andThen)(parser1, parser2)
+
+const skipRight = (parser1, parser2) => compose(map(([x,y]) => x), andThen)(parser1, parser2)
 
 const between = (parser1, parser2, parser3) => sequence([ignore(parser1), parser2, ignore(parser3)])
 
@@ -189,7 +182,7 @@ const times = (min, max, parser) => Parser((input) => {
         result = parser.action(remaining)
 
         if (isSuccess(result) === true) {
-            values = mergeResults(values, result.value)
+            values = prepend(result.value, values)
             remaining = result.remaining
             times += 1
         } else if (times >= min) {
@@ -249,12 +242,17 @@ const satisfy = (pred) => Parser((input) => {
     }
 })
 
+const anyOf = (chars) => compose(choice, listMap(str))(chars)
+
 module.exports = {
     str,
     regex,
     satisfy,
+    anyOf,
+    of,
     orElse,
     andThen,
+    choice,
     sequence,
     sequenceMap,
     opt,
@@ -264,15 +262,12 @@ module.exports = {
     times,
     atMost,
     atLeast,
-    anyOf,
     map,
     many,
     many1,
-    ignore,
     lazy,
     skip,
-    of ,
-    fail,
+    skipRight,
     ap,
     lift2,
     chain,
