@@ -37,8 +37,7 @@ const {
     reject,
     isNil,
     prop,
-    init,
-    drop,
+    //drop,
     map: rMap,
     merge,
     reduce,
@@ -54,51 +53,9 @@ const log = (item) => {
 const projectDie = (die) => ({
     type: 'die',
     number: Number(die[0]),
-    diceType: Number(die[2])
+    diceType: die[2],
+    modifiers: die[3]
 })
-
-const projectKeepDie = (die) => ({
-    type: 'keepdie',
-    number: Number(die[0]),
-    diceType: Number(die[2]),
-    keep: {
-        type: (die[3] === 'kl' ? 'lowest' : 'highest'),
-        number: Number(die[4])
-    }
-})
-
-const projectDropDie = (die) => ({
-    type: 'dropdie',
-    number: Number(die[0]),
-    diceType: Number(die[2]),
-    drop: {
-        type: (die[3] === 'dh' ? 'highest' : 'lowest'),
-        number: Number(die[4])
-    }
-})
-
-const projectSuccessDie = (die) => ({
-    type: 'successdie',
-    number: Number(die[0]),
-    diceType: Number(die[2]),
-    success: {
-        comparator: die[3],
-        target: Number(die[4])
-    }
-})
-
-const projectRerollDie = (die) => {
-    console.log('die', die[3])
-    return {
-        type: 'rerolldie',
-        number: Number(die[0]),
-        diceType: Number(die[2]),
-        reroll: {
-            comparator: die[4],
-            target: Number(die[5])
-        }
-    }
-}
 
 const projectNumber = (num) => ({
     type: 'number',
@@ -125,17 +82,17 @@ const digits = regex(/[0-9]+/)
 const whitespace = regex(/\s+/)
 const betweenWhitespace = (parser) => between(opt(whitespace), parser, opt(whitespace))
 
-const die = compose(map(projectDie), betweenWhitespace, sequence)([digits, str('d'), digits])
+const keep = sequence([choice([str('kh'), str('kl'), str('k')]), digits])
 
-const keepDie = compose(map(projectKeepDie), betweenWhitespace, sequence)([digits, str('d'), digits, choice([str('kh'), str('kl'), str('k')]), digits])
+const drop = sequence([choice([str('dh'), str('dl'), str('d')]), digits])
 
-const dropDie = compose(map(projectDropDie), betweenWhitespace, sequence)([digits, str('d'), digits, choice([str('dh'), str('dl'), str('d')]), digits])
-
-const successDie = compose(map(projectSuccessDie), betweenWhitespace, sequence)([digits, str('d'), digits, choice([str('<='), str('>='), str('<'), str('>'), str('=')]), digits])
+const success = sequence([choice([str('<='), str('>='), str('<'), str('>'), str('=')]), digits])
 
 const reroll = sequence([choice([str('ro'), str('r')]), opt(choice([str('<='), str('>='), str('<'), str('>')])), opt(digits)])
 
-const rerollDie = compose(map(projectRerollDie), betweenWhitespace, sequence)([digits, str('d'), digits, many(reroll)])
+const modifier = choice([keep, drop, success, reroll])
+
+const die = compose(map(projectDie), map(log), betweenWhitespace, sequence)([digits, str('d'), choice([digits, str('f')]), many(modifier)])
 
 const num = compose(map(projectNumber), betweenWhitespace)(digits)
 
@@ -143,9 +100,8 @@ const operator = compose(map(projectOperator), betweenWhitespace, choice)([str('
 
 const bracket = compose(map(projectBracket), betweenWhitespace, choice)([str('('), str(')')])
 
-const expression = compose(many1, choice)([rerollDie, successDie, dropDie, keepDie, die, num, operator, bracket])
+const expression = compose(many1, choice)([die, num, operator, bracket])
 
+const calculation = compose(fold, parse)(expression, '  2d100kh3r>50 + 6df ')
 
-const calculation = compose(fold, parse)(andThen(expression, eof), '  2d10r1r2r3r>4 ')
-
-console.log(calculation.output)
+console.log(calculation)

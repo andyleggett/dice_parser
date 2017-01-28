@@ -297,10 +297,7 @@ const noneOf = (chars) => Parser((input) => {
     
 })
 
-const eof = Parser((input) => {
-    console.log(input)
-    return (input === '') ? Success('', '') : Failure('Expected end of input')
-})
+const eof = Parser((input) => (input === '') ? Success('', '') : Failure('Expected end of input'))
 
 const all = Parser((input) => Success(input, ''))
 
