@@ -221,7 +221,7 @@ const lookAhead = (str) => Parser((input) => {
         return Success('', input)
     } else {
         return Failure('Expected ' + str)
-    } 
+    }
 })
 
 const lookAheadP = (parser) => Parser((input) => {
@@ -235,7 +235,7 @@ const lookAheadP = (parser) => Parser((input) => {
 })
 
 const lookAheadRegEx = (regex) => {
-    
+
 }
 
 const lazy = (f) => {
@@ -294,7 +294,7 @@ const noneOf = (chars) => Parser((input) => {
     } else {
         return Failure('Expected none of ' + chars)
     }
-    
+
 })
 
 const eof = Parser((input) => (input === '') ? Success('', '') : Failure('Expected end of input'))
@@ -310,7 +310,7 @@ module.exports = {
     anyOf,
     noneOf,
     eof,
-    all, 
+    all,
     any,
     of,
     fail,

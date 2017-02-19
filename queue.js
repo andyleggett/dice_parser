@@ -50,10 +50,22 @@ const swapStacks = (queue) => {
     return Queue(queue.front, queue.back)
 }
 
+const toArray = (queue) => {
+    const output = []
+
+    while (isEmpty(queue) === false){
+        output.push(peek(queue))
+        queue = dequeue(queue)
+    }
+
+    return output
+}
+
 module.exports = {
     enqueue,
     dequeue,
     peek,
     empty,
-    isEmpty
+    isEmpty,
+    toArray
 }
