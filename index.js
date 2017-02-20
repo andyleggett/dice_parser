@@ -4,7 +4,12 @@ const {
 } = require('./shuntingyard')
 
 const {
-    compose
+    calculate
+} = require('./dicecalculator')
+
+const {
+    compose,
+    prop
 } = require('ramda')
 
 const {
@@ -17,10 +22,8 @@ const {
 } = require('./diceparser')
 
 console.time('calc')
-const calculation = compose(fold, parse)(expression, '  (2d100kh3r>50 + 10) * 6df ')
 
-if (calculation.success === true){
-    console.log(shunt(calculation.output))
-}
+//TODO: Add Either
+console.log(compose(calculate, shunt, prop('output'), fold, parse)(expression, '  (2d100kh3r>50 + 10) * 6df '))
 
 console.timeEnd('calc')
