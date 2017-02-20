@@ -61,11 +61,31 @@ const toArray = (queue) => {
     return output
 }
 
+const foldl = (step, initial, queue) => {
+    if (isEmpty(queue)){
+        return initial
+    } else {
+        return foldl(step, step(initial, peek(queue)), dequeue(queue))
+    }
+}
+
+const map = (f, queue) => {
+    let newQueue = empty()
+    while (isEmpty(queue) === false){
+        newQueue = enqueue(f(peek(queue)), newQueue)
+        queue = dequeue(queue)
+    }
+
+    return newQueue
+}
+
 module.exports = {
     enqueue,
     dequeue,
     peek,
     empty,
     isEmpty,
-    toArray
+    toArray, 
+    foldl,
+    map
 }

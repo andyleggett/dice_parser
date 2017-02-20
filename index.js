@@ -4,12 +4,14 @@ const {
 } = require('./shuntingyard')
 
 const {
-    calculate
+    calculate,
+    rollDice
 } = require('./dicecalculator')
 
 const {
     compose,
-    prop
+    prop,
+    map
 } = require('ramda')
 
 const {
@@ -21,9 +23,13 @@ const {
    expression
 } = require('./diceparser')
 
+const {
+   log
+} = require('./utils')
+
 console.time('calc')
 
 //TODO: Add Either
-console.log(compose(calculate, shunt, prop('output'), fold, parse)(expression, '  (2d100kh3r>50 + 10) * 6df '))
+console.log(compose(map(compose(calculate, rollDice, shunt)), log, fold, parse)(expression, '  6d10  '))
 
 console.timeEnd('calc')

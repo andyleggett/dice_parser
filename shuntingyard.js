@@ -67,7 +67,7 @@ const shuntState = {
 
 const appendRemaining = ({output, operators}) => removeOperators(notEmpty, output, operators)
 
-const shunt = (tokens) =>  compose(Queue.toArray, prop('output'), appendRemaining, reduce(shunter, shuntState))(tokens)
+const shunt = (tokens) =>  compose(prop('output'), appendRemaining, reduce(shunter, shuntState))(tokens)
 
 module.exports = {
     shunt

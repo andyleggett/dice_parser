@@ -14,6 +14,11 @@ const {
     contains
 } = require('ramda')
 
+const {
+    Left,
+    Right
+} = require('data.either')
+
 //PARSER TYPE
 const _Parser = function (action, label) {
     this.action = action
@@ -53,17 +58,9 @@ const log = (item) => {
 
 const fold = (result) => {
     if (isSuccess(result) === true) {
-        return {
-            success: true,
-            output: result.value,
-            remaining: result.remaining
-        }
+        return Right(result)
     } else {
-        return {
-            success: false,
-            error: result.message,
-            label: result.label
-        }
+        return Left(result.message)
     }
 }
 
