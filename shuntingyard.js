@@ -1,5 +1,6 @@
 const Stack = require('./stack')
 const Queue = require('./queue')
+
 const {
     map,
     reduce,
@@ -8,10 +9,6 @@ const {
     curry,
     prop
 } = require('ramda')
-
-const {
-    log
-} = require('./utils')
 
 const removeOperators = (pred, output, operators) => {
      while(pred(operators)){

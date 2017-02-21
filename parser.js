@@ -49,16 +49,11 @@ const isFailure = (result) => result instanceof _Failure
 
 const first = (pair) => pair[0]
 
-const parse = (parser, input) => parser.action(input)
-
-const log = (item) => {
-    console.log(item)
-    return item
-}
+const parse = curry((parser, input) => parser.action(input))
 
 const fold = (result) => {
     if (isSuccess(result) === true) {
-        return Right(result)
+        return result.remaining === '' ? Right(result.value) : Left('Parsing not complete')
     } else {
         return Left(result.message)
     }

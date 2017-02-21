@@ -1,3 +1,7 @@
+const {
+    curry
+} = require('ramda')
+
 const Stack = require('./stack')
 
 const _Queue = function (front, back) {
@@ -61,15 +65,15 @@ const toArray = (queue) => {
     return output
 }
 
-const foldl = (step, initial, queue) => {
+const foldl = curry((step, initial, queue) => {
     if (isEmpty(queue)){
         return initial
     } else {
         return foldl(step, step(initial, peek(queue)), dequeue(queue))
     }
-}
+})
 
-const map = (f, queue) => {
+const map = curry((f, queue) => {
     let newQueue = empty()
     while (isEmpty(queue) === false){
         newQueue = enqueue(f(peek(queue)), newQueue)
@@ -77,7 +81,7 @@ const map = (f, queue) => {
     }
 
     return newQueue
-}
+})
 
 module.exports = {
     enqueue,
@@ -85,7 +89,7 @@ module.exports = {
     peek,
     empty,
     isEmpty,
-    toArray, 
+    toArray,
     foldl,
     map
 }

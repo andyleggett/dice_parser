@@ -5,14 +5,22 @@ const {
 
 const {
     calculate,
-    rollDice
+    rollDice,
+    matchBrackets,
+    print
 } = require('./dicecalculator')
 
 const {
     compose,
     prop,
-    map
+    map,
+    chain
 } = require('ramda')
+
+const {
+    Left,
+    Right
+} = require('data.either')
 
 const {
     parse,
@@ -29,7 +37,9 @@ const {
 
 console.time('calc')
 
-//TODO: Add Either
-console.log(compose(map(compose(calculate, rollDice, shunt)), log, fold, parse)(expression, '  6d10  '))
+const rolledDice = compose(map(rollDice), chain(matchBrackets), fold, parse(expression))('   100d100 ')
+
+console.log(map(print)(rolledDice))
+console.log(compose(map(calculate), map(shunt))(rolledDice))
 
 console.timeEnd('calc')
