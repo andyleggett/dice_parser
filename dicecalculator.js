@@ -1,5 +1,4 @@
 const Stack = require('./stack')
-const Queue = require('./queue')
 
 const {
     compose,
@@ -60,11 +59,13 @@ const calculateStep = (stack, step) => {
     }
 }
 
-//calculate :: Queue -> Number
-const calculate = compose(Stack.peek, Queue.foldl(calculateStep, Stack.empty()))
+//calculate :: Array -> Number
+const calculate = compose(Stack.peek, reduce(calculateStep, Stack.empty()))
 
+//produceRoll :: Object -> Number -> (Boolean || [Number, Number])
 const produceRoll = step => n => n > step.number ? false : [randomFromRange(1, step.diceType), n + 1];
 
+//rollDie :: Object -> Object
 const rollDie = (step) => {
     if (step.type === 'die'){
         //TODO: modifiers
@@ -82,19 +83,10 @@ const rollDie = (step) => {
 //rollDice :: Array -> Array
 const rollDice = map(rollDie)
 
-const countBracket = (state, step) => ({
-    open: state.open + ((step.type === 'bracket' && step.bracket === '(') ? 1 : 0),
-    close: state.close + ((step.type === 'bracket' && step.bracket === ')') ? 1 : 0),
-})
-
-//hasEqualBrackets:: Object -> Boolean
-const hasEqualBrackets = (brackets) => (brackets.open === brackets.close)
-
-//matchBrackets :: Array -> Either Array String
-const matchBrackets = (steps) => compose(hasEqualBrackets, log, reduce(countBracket, {open: 0, close: 0}))(steps) ? Right(steps) : Left('Brackets don\'t match')
-
+//pad :: String -> String -> String -> String
 const pad = (str, padstart, padend) => padstart + str + (padend || padstart)
 
+//printStep :: String -> Object -> String
 const printStep = (state, step) => {
     switch (step.type){
         case 'die':
@@ -110,11 +102,11 @@ const printStep = (state, step) => {
     }
 }
 
+//print :: Array => String
 const print = reduce(printStep, '')
 
 module.exports = {
     calculate,
     rollDice,
-    matchBrackets,
     print
 }

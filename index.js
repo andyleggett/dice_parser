@@ -1,12 +1,13 @@
 
 const {
-    shunt
+    shunt,
+    matchBrackets,
+    checkExpression
 } = require('./shuntingyard')
 
 const {
     calculate,
     rollDice,
-    matchBrackets,
     print
 } = require('./dicecalculator')
 
@@ -37,9 +38,17 @@ const {
 
 console.time('calc')
 
-const rolledDice = compose(map(rollDice), chain(matchBrackets), fold, parse(expression))('   100d100 ')
+const parsedDice = compose(fold, parse(expression))('   (10d100 ^ 6) ')
 
-console.log(map(print)(rolledDice))
-console.log(compose(map(calculate), map(shunt))(rolledDice))
+const rolledDice = map(rollDice)(parsedDice)
+
+const calculatedDice = compose(map(calculate), chain(checkExpression), map(shunt), chain(matchBrackets))(rolledDice)
+
+if (calculatedDice.isRight){
+    console.log(map(print)(rolledDice))
+    console.log(calculatedDice)
+} else {
+    console.log(calculatedDice)
+}
 
 console.timeEnd('calc')

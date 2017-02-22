@@ -31,23 +31,28 @@ const projectNumber = (num) => ({
 const operators = {
     '^': {
         precedence: 4,
-        associativity: "right"
+        associativity: "right",
+        arity: 2
     },
     '/': {
         precedence: 3,
-        associativity: "left"
+        associativity: "left",
+        arity: 2
     },
     '*': {
         precedence: 3,
-        associativity: "left"
+        associativity: "left",
+        arity: 2
     },
     '+': {
         precedence: 2,
-        associativity: "left"
+        associativity: "left",
+        arity: 2
     },
     '-': {
         precedence: 2,
-        associativity: "left"
+        associativity: "left",
+        arity: 2
     }
 }
 
