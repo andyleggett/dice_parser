@@ -8,12 +8,17 @@ const {
     regex,
     map,
     between,
-    opt
+    opt,
+    end,
+    andThen,
+    setLabel,
+    skip
 } = require('./parser')
 
 const {
     compose,
-    merge
+    merge,
+    __
 } = require('ramda')
 
 const projectDie = (die) => ({
@@ -71,9 +76,10 @@ const projectWhitespace = (ws) => ({
     whitespace: ws
 })
 
-const digit = regex(/[0-9]/)
-const digits = regex(/[0-9]+/)
-const whitespace = regex(/\s+/)
+const digit = regex(/[0-9]/, 'digit')
+const digits = regex(/[0-9]+/, 'digits')
+const whitespace = regex(/\s+/, 'whitespace')
+
 const betweenWhitespace = (parser) => between(opt(whitespace), parser, opt(whitespace))
 
 const keep = sequence([choice([str('kh'), str('kl'), str('k')]), digits])
@@ -86,15 +92,15 @@ const reroll = sequence([choice([str('ro'), str('r')]), opt(choice([str('<='), s
 
 const modifier = choice([keep, drop, success, reroll])
 
-const die = compose(map(projectDie), betweenWhitespace, sequence)([digits, str('d'), choice([digits, str('f')]), many(modifier)])
+const die = compose(setLabel('die'), map(projectDie), betweenWhitespace, sequence)([digits, str('d'), choice([str('f'), digits]), many(modifier)])
 
-const num = compose(map(projectNumber), betweenWhitespace)(digits)
+const num = compose(setLabel('number'), map(projectNumber), betweenWhitespace)(digits)
 
-const operator = compose(map(projectOperator), betweenWhitespace, choice)([str('+'), str('-'), str('*'), str('/'), str('^')])
+const operator = compose(setLabel('operator'), map(projectOperator), betweenWhitespace, choice)([str('+'), str('-'), str('*'), str('/'), str('^')])
 
-const bracket = compose(map(projectBracket), betweenWhitespace, choice)([str('('), str(')')])
+const bracket = compose(setLabel('bracket'), map(projectBracket), betweenWhitespace, choice)([str('('), str(')')])
 
-const expression = compose(many1, choice)([die, num, operator, bracket])
+const expression = compose(many, choice)([die, num, operator, bracket])
 
 module.exports = {
     expression

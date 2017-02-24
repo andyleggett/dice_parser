@@ -38,7 +38,7 @@ const {
 
 console.time('calc')
 
-const parsedDice = compose(fold, parse(expression))('   (10d100 ^ 6) ')
+const parsedDice = compose(fold, parse(expression))('(10d10 + 4 ) + 4d6')
 
 const rolledDice = map(rollDice)(parsedDice)
 
@@ -46,9 +46,8 @@ const calculatedDice = compose(map(calculate), chain(checkExpression), map(shunt
 
 if (calculatedDice.isRight){
     console.log(map(print)(rolledDice))
-    console.log(calculatedDice)
-} else {
-    console.log(calculatedDice)
 }
+
+console.log(calculatedDice)
 
 console.timeEnd('calc')
