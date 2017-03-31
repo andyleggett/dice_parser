@@ -38,7 +38,7 @@ const {
 
 console.time('calc')
 
-const parsedDice = compose(fold, parse(expression))('(10d10 + 4 ) + 4d6')
+const parsedDice = compose(log, fold, parse(expression))('(10d10 + 4 ) + 4d6')
 
 const rolledDice = map(rollDice)(parsedDice)
 

@@ -11,7 +11,8 @@ const {
     apply,
     repeat,
     map: listMap,
-    contains
+    contains,
+    join
 } = require('ramda')
 
 const {
@@ -43,6 +44,8 @@ const _Failure = function (message, label) {
 const Failure = (message, label) => new _Failure(message, label)
 
 //HELPERS
+const isParser = (parser) => parser instanceof _Parser
+
 const isSuccess = (result) => result instanceof _Success
 
 const isFailure = (result) => result instanceof _Failure
@@ -80,10 +83,6 @@ const andThen = curry((parser1, parser2) => Parser((input) => {
         return result1
     }
 }, `${getLabel(parser1)} andThen ${getLabel(parser2)}`))
-
-const notFollowedBy = curry((parser1, parser2) => {
-
-})
 
 const choice = (parsers) => reduce(orElse, head(parsers))(tail(parsers))
 
@@ -155,7 +154,7 @@ const skipMany = () => {}
 
 const between = (parser1, parser2, parser3) => sequenceMap((x, y, z) => y, [parser1, parser2, parser3])
 
-const sepBy1 = (match, sep) => andThen(match, many(skip(sep, match)))
+const sepBy1 = (match, sep) => map(flatten)(andThen(match, many(skip(sep, match))))
 
 const sepBy = (match, sep) => Parser((input) => {
     const result = sepBy1(match, sep).action(input)
@@ -165,7 +164,7 @@ const sepBy = (match, sep) => Parser((input) => {
     } else {
         return Success([], result.remaining)
     }
-})
+}, sep)
 
 const times = (min, max, parser) => Parser((input) => {
     let times = 0
@@ -195,10 +194,6 @@ const atMost = (upperlimit, parser) => times(0, upperlimit, parser)
 const atLeast = (lowerlimit, parser) => times(lowerlimit, Infinity, parser)
 
 const opt = (parser) => times(0, 1, parser)
-
-const takeWhile = (pred) => {
-
-}
 
 const lazy = (f) => {
     const parser = Parser((input) => {
@@ -230,7 +225,7 @@ const str = (str) => Parser((input) => {
     } else {
         return Failure('Unexpected ' + test, str)
     }
-})
+}, str)
 
 const regex = (regexp, label) => Parser((input) => {
     const match = input.match(regexp)
@@ -240,7 +235,7 @@ const regex = (regexp, label) => Parser((input) => {
     } else {
         return Failure('Unexpected string from ' + regexp.source, label)
     }
-})
+}, label)
 
 const satisfy = (pred, label) => Parser((input) => {
     const test = input.charAt(0)
@@ -261,7 +256,7 @@ const noneOf = (chars) => Parser((input) => {
     if (!contains(test, chars)){
         return Success(test, input.substr(1))
     } else {
-        return Failure('Unexpected ' + test, 'one of')
+        return Failure('Unexpected ' + test, `one of ${join(',', chars)}`)
     }
 })
 
@@ -287,11 +282,11 @@ const lookAheadP = (parser) => Parser((input) => {
     if (isSuccess(result) === true){
         return Success('', input)
     } else {
-        return Failure('Expected parser to work')
+        return Failure('Unexpected failure of lookahead', getLabel(parser))
     }
 })
 
-const lookAheadRegEx = (regex) => {
+const lookAheadRegEx = (regex, label) => {
  const match = input.match(regexp)
 
     if (match !== null && (match[0] === input.substr(0, match[0].length))) {
@@ -314,7 +309,6 @@ module.exports = {
     fail,
     orElse,
     andThen,
-    notFollowedBy,
     choice,
     sequence,
     sequenceMap,
@@ -341,5 +335,8 @@ module.exports = {
     parse,
     fold,
     getLabel,
-    setLabel
+    setLabel,
+    isParser,
+    isSuccess,
+    isFailure
 }

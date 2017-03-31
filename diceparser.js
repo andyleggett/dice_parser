@@ -17,9 +17,12 @@ const {
 
 const {
     compose,
-    merge,
-    __
+    merge
 } = require('ramda')
+
+const {
+    log
+} = require('./utils')
 
 const projectDie = (die) => ({
     type: 'die',
@@ -92,7 +95,7 @@ const reroll = sequence([choice([str('ro'), str('r')]), opt(choice([str('<='), s
 
 const modifier = choice([keep, drop, success, reroll])
 
-const die = compose(setLabel('die'), map(projectDie), betweenWhitespace, sequence)([digits, str('d'), choice([str('f'), digits]), many(modifier)])
+const die = compose(setLabel('die'), map(projectDie), log, betweenWhitespace, sequence)([digits, str('d'), choice([str('f'), digits]), many(modifier)])
 
 const num = compose(setLabel('number'), map(projectNumber), betweenWhitespace)(digits)
 

@@ -67,7 +67,9 @@ const produceRoll = step => n => n > step.number ? false : [randomFromRange(1, s
 
 //rollDie :: Object -> Object
 const rollDie = (step) => {
+
     if (step.type === 'die'){
+        console.log(step)
         //TODO: modifiers
         const values = unfold(produceRoll(step), 1)
 
